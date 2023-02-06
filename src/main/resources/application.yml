@@ -1,0 +1,23 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /community
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/community
+    username: root
+    password: 123456
+  thymeleaf:
+    cache: false
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.hhj.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+
+logging:
+  file:
+    name: C:\Users\FeiLao\Desktop\log\work.log
+
