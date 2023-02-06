@@ -6,12 +6,72 @@
         id,username,salt,email,type,status,header_url,create_time
     </sql>
 
+
     <select id="selectUserById" resultType="User">
-        select <include refid="userFields"></include>
+        select *
         from user
-        where status !=0
-        <if test="userId != 0">
-            and id = #{userId}
+        <if test="userId != null">
+            where id = #{userId}
+        </if>
+    </select>
+    <select id="selectByName" resultType="int">
+        select count(username)
+        from user
+        <if test="name != null">
+            where username = #{name}
+        </if>
+    </select>
+    <select id="selectByEmail" resultType="int">
+        select count(email)
+        from user
+        <if test="email != null">
+            where email= #{email}
+        </if>
+    </select>
+    <insert id="insertUser" parameterType="user">
+        insert into user(id,username,password,salt,email,type,status,activation_code,header_url,create_time)
+        values (null,
+        <if test="user.username!=null">
+            #{user.username},
+        </if>
+        <if test="user.password!=null">
+            #{user.password},
+        </if>
+        <if test="user.salt!=null">
+            #{user.salt},
+        </if>
+        <if test="user.email !=null">
+            #{user.email},
+        </if>
+        <if test="user.type !=null">
+            #{user.type},
+        </if>
+        <if test="user.status !=null">
+            #{user.status},
+        </if>
+        <if test="user.activationCode !=null">
+            #{user.activationCode},
+        </if>
+        <if test="user.headerUrl !=null">
+            #{user.headerUrl},
+        </if>
+        now())
+    </insert>
+    <update id="updateStatus" parameterType="int">
+        update user
+        set
+        <if test="status!=null">
+            status = #{status}
+        </if>
+        <if test="userId !=null">
+            where id = #{userId}
+        </if>
+    </update>
+    <select id="getUserId" resultType="int">
+        select id
+        from user
+        <if test="username !=null">
+            where username = #{username}
         </if>
     </select>
 </mapper>

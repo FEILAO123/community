@@ -45,4 +45,14 @@ public class HomeController {
         model.addAttribute("discussPosts",discussPosts);
         return "/index";
     }
+
+    @GetMapping("/register")
+    public String toRegister(){
+        return "/site/register";
+    }
+
+    @GetMapping("/login")
+    public String toLogin(){
+        return "/site/login";
+    }
 }
