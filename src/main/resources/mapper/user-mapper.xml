@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hhj.dao.UserMapper">
     <sql id="userFields">
-        id,username,salt,email,type,status,header_url,create_time
+        id,username,password,salt,email,type,status,header_url,create_time
     </sql>
 
 
@@ -14,8 +14,8 @@
             where id = #{userId}
         </if>
     </select>
-    <select id="selectByName" resultType="int">
-        select count(username)
+    <select id="selectByName" resultType="user">
+        select <include refid="userFields"></include>
         from user
         <if test="name != null">
             where username = #{name}
@@ -61,7 +61,7 @@
         update user
         set
         <if test="status!=null">
-            status = #{status}
+            status = 1
         </if>
         <if test="userId !=null">
             where id = #{userId}

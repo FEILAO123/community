@@ -1,19 +1,24 @@
 package com.hhj.service.impl;
 
+import com.hhj.config.JwtConfig;
 import com.hhj.dao.UserMapper;
 import com.hhj.entity.User;
 import com.hhj.service.UserService;
+import com.hhj.utils.CommuniryConstant;
 import com.hhj.utils.CommunityUtil;
 import com.hhj.utils.MailClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 
+import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -22,6 +27,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private MailClient mailClient;
+
+    @Autowired
+    private JwtConfig jwt;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Autowired
     private TemplateEngine templateEngine;
@@ -52,8 +63,8 @@ public class UserServiceImpl implements UserService {
         }
         //如果上述条件都不成立，开始业务逻辑
         //1.校验账号是否存在
-        int countByName = userMapper.selectByName(user.getUsername());
-        if (countByName>0){
+        User checkUser = userMapper.selectByName(user.getUsername());
+        if (checkUser!=null){
             map.put("usernameERROR","账号已存在，请重新输入");
             return map;
         }
@@ -93,11 +104,68 @@ public class UserServiceImpl implements UserService {
             //说明已经激活过了
             return ACTIVATION_REPEAT;
         }else if (user.getActivationCode().equals(code)){
-            userMapper.updateStatus(userId,ACTIVATION_SUCCESS);
+            userMapper.updateStatus(userId);
             //说明成功激活
             return ACTIVATION_SUCCESS;
         }else {
             return ACTIVATION_FAILURE;
         }
+    }
+
+    @Override
+    public Map<String, Object> login(String username, String password,int expiredSeconds) {
+        Map<String,Object> map = new HashMap<>();
+        //空值处理
+        if (StringUtils.isBlank(username)||StringUtils.isBlank(password)){
+            map.put("loginERROR","请输入账号/密码");
+            return map;
+        }
+        //判断账号是否存在或是否已经激活
+        User user = checkUser(username);
+        if (user==null){
+            //说明账号不存在
+            map.put("AccountIsNULL","账号不存在/未激活");
+            return map;
+        }
+        //说明账号已存在，进行验证账号密码
+        password = CommunityUtil.md5(password+user.getSalt());
+        if (!user.getPassword().equals(password)){
+            map.put("passwordERROR","密码不正确，请重新输入");
+            return map;
+        }
+        //以上都正确，则账号登录成功，则根据UUID生成登录凭证（token）
+        String token = jwt.createToken(CommunityUtil.generateUUID());
+        redisTemplate.opsForValue().set(user.getId().toString(),token,expiredSeconds, TimeUnit.MILLISECONDS);
+        map.put("ticket",token);
+        return map;
+    }
+
+    /**
+     *  校验验证码
+     * @param code
+     * @param session
+     * @return
+     */
+    @Override
+    public boolean checkCode(String code, HttpSession session) {
+        String kaptcha = (String) session.getAttribute("kaptcha");
+        if (!code.equalsIgnoreCase(kaptcha)||StringUtils.isBlank(code)||StringUtils.isBlank(kaptcha)){
+            return false;
+        }
+        return true;
+    }
+
+
+    public User checkUser(String username){
+        User checkUser = userMapper.selectByName(username);
+        if (checkUser!=null){
+            //说明账号已存在,判断是否激活
+            if (checkUser.getStatus()==1){
+                return checkUser;
+            }else {
+                return null;
+            }
+        }
+        return null;
     }
 }

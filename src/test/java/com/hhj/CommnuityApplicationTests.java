@@ -1,26 +1,25 @@
 package com.hhj;
 
+import com.hhj.config.JwtConfig;
 import com.hhj.dao.DiscussPostMapper;
 import com.hhj.dao.UserMapper;
 import com.hhj.entity.DiscussPost;
 import com.hhj.entity.User;
+import com.hhj.utils.CommuniryConstant;
 import com.hhj.utils.CommunityUtil;
 import com.hhj.utils.MailClient;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.*;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -98,11 +97,6 @@ class CommnuityApplicationTests {
     }
 
 
-    @Test
-    public void testSelectByUserName(){
-        int aaa = userMapper.selectByName("aaa");
-        System.out.println(aaa);
-    }
 
 
     @Test
@@ -114,5 +108,23 @@ class CommnuityApplicationTests {
         user.setStatus(0);
         user.setActivationCode(CommunityUtil.generateUUID().substring(0,5));
         user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png",new Random().nextInt(1001)));
+    }
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Test
+    public void testRedis(){
+       redisTemplate.opsForValue().set("test","test1");
+    }
+
+    @Autowired
+    JwtConfig jwtConfig;
+    @Test
+    public void testJWT(){
+        String token = jwtConfig.createToken(CommunityUtil.generateUUID());
+        System.out.println(token);
+        redisTemplate.opsForValue().set(CommunityUtil.generateUUID(),token);
+
     }
 }
